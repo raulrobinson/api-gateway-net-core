@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Desktop\\BACKEND\\api-gateway-back-for-front\\api-gateway\\api-gateway.csproj": {}
+    "D:\\12\\api-gateway-net-core\\api-gateway\\api-gateway.csproj": {}
   },
   "projects": {
-    "D:\\Desktop\\BACKEND\\api-gateway-back-for-front\\api-gateway\\api-gateway.csproj": {
+    "D:\\12\\api-gateway-net-core\\api-gateway\\api-gateway.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Desktop\\BACKEND\\api-gateway-back-for-front\\api-gateway\\api-gateway.csproj",
+        "projectUniqueName": "D:\\12\\api-gateway-net-core\\api-gateway\\api-gateway.csproj",
         "projectName": "api-gateway",
-        "projectPath": "D:\\Desktop\\BACKEND\\api-gateway-back-for-front\\api-gateway\\api-gateway.csproj",
-        "packagesPath": "C:\\Users\\rasys\\.nuget\\packages\\",
-        "outputPath": "D:\\Desktop\\BACKEND\\api-gateway-back-for-front\\api-gateway\\obj\\",
+        "projectPath": "D:\\12\\api-gateway-net-core\\api-gateway\\api-gateway.csproj",
+        "packagesPath": "C:\\Users\\OPT\\.nuget\\packages\\",
+        "outputPath": "D:\\12\\api-gateway-net-core\\api-gateway\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\rasys\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\OPT\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -72,7 +72,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.400\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.405\\RuntimeIdentifierGraph.json"
         }
       }
     }
