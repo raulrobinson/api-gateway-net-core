@@ -36,3 +36,13 @@ ENTRYPOINT ["dotnet", "api-gateway.dll"]
 - docker run -p 5000:443 -e ASPNETCORE_URLS="https://+;" -e ASPNETCORE_HTTPS_PORT=7001 -e ASPNETCORE_Kestrel__Certi
 ficates__Default__Password="Pass@*****" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/api-gateway.pfx -v %USERPROFILE%\.aspnet\https:/https/ a
 pi-gateway:v3
+
+```text
+docker run -p 5000:443 
+-e ASPNETCORE_URLS="https://+;" 
+-e ASPNETCORE_HTTPS_PORT=7001 
+-e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" 
+-e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/api-gateway.pfx 
+-v %USERPROFILE%\.aspnet\https:/https/ 
+api-gateway:v3
+```
