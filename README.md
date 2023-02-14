@@ -3,46 +3,60 @@ API Gateway with Ocelot Routing
 
 #### Dockerfile
 ```text
-# First Stage SDK Framework.
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+# ---------------------------------------------------
+#	DOCKERFILE HTTPS ASP.NET Core
+# ---------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
-
-EXPOSE 443
 EXPOSE 80
+EXPOSE 443
 
-# Generate SSL Certificate trust signed.
-RUN dotnet dev-certs https -ep %USERPROFILE%\.aspnet\https\api-gateway.pfx -p Pass@*****
-RUN dotnet dev-certs https --trust
+# ---------------------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+COPY ["OcelotGateway/OcelotGateway.csproj", "OcelotGateway/"]
+RUN dotnet restore "OcelotGateway/OcelotGateway.csproj"
 
-# copy project csproj file and restore it in docker directory
 COPY . .
-RUN dotnet restore
+WORKDIR "/src/OcelotGateway"
+RUN dotnet build "OcelotGateway.csproj" -c Release -o /app/build
 
-# Copy everything into the docker directory and build
-COPY . .
-RUN dotnet publish -c Release -o out
+COPY csr.conf /app/build
+COPY cert.conf /app/build
 
-# Build runtime final image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+# ---------------------------------------------------
+FROM build AS publish
+RUN dotnet publish "OcelotGateway.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+RUN openssl genrsa -out /app/publish/server.key 2048
+RUN openssl req -new -key /app/publish/server.key -out /app/publish/server.csr -config /app/build/csr.conf
+RUN openssl req -x509 -sha256 -days 356 -nodes -newkey rsa:2048 -subj "/CN=DigiCert SHA2 Extended Validation Server CA/C=CO/L=Bogota/O=DigiCert Inc/OU=www.digicert.com" -keyout /app/publish/rootCA.key -out /app/publish/rootCA.crt
+RUN openssl x509 -req -in /app/publish/server.csr -CA /app/publish/rootCA.crt -CAkey /app/publish/rootCA.key -CAcreateserial -out /app/publish/server.crt -days 365 -sha256 -extfile /app/build/cert.conf
+
+RUN cat /app/publish/server.key > /app/publish/server.pem
+RUN cat /app/publish/server.crt >> /app/publish/server.pem
+
+RUN openssl pkcs12 -export -out /app/publish/certificate.pfx -inkey /app/publish/server.key -in /app/publish/server.pem -passout pass:Pass@*****
+
+# ---------------------------------------------------
+FROM base AS final
 WORKDIR /app
-COPY --from=build /app/out .
-ENTRYPOINT ["dotnet", "api-gateway.dll"]
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "OcelotGateway.dll"]
 ```
 
 #### Docker Build image
-- docker build . -t api-gateway:v1
+- docker build . -t ocelot-gateway
 
 #### Docker Run Container
-- docker run -p 5000:443 -e ASPNETCORE_URLS="https://+;" -e ASPNETCORE_HTTPS_PORT=7001 -e ASPNETCORE_Kestrel__Certi
-ficates__Default__Password="Pass@*****" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/api-gateway.pfx -v %USERPROFILE%\.aspnet\https:/https/ a
-pi-gateway:v3
+- docker run -it --name=ocelotgateway -e ASPNETCORE_URLS="https://+;" -e ASPNETCORE_HTTPS_PORT=7001 -e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certificate.pfx -v ${HOME}\\.aspnet\\https:/https/ -p 5000:443 ocelot-gateway
 
 ```text
-docker run -p 5000:443 
--e ASPNETCORE_URLS="https://+;" 
--e ASPNETCORE_HTTPS_PORT=7001 
--e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" 
--e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/api-gateway.pfx 
--v %USERPROFILE%\.aspnet\https:/https/ 
-api-gateway:v3
+docker run -it --name=ocelotgateway 
+  -e ASPNETCORE_URLS="https://+;" 
+  -e ASPNETCORE_HTTPS_PORT=7001 
+  -e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" 
+  -e ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certificate.pfx 
+  -v ${HOME}\\.aspnet\\https:/https/ 
+  -p 5000:443 ocelot-gateway
 ```
