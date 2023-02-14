@@ -14,6 +14,18 @@
           "Port": 443
         }
       ]
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/product",
+      "UpstreamHttpMethod": [ "Get" ],
+      "DownstreamPathTemplate": "/api/product",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ]
     }
   ]
 }
