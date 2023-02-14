@@ -49,7 +49,7 @@ ENTRYPOINT ["dotnet", "OcelotGateway.dll"]
 - docker build . -t ocelot-gateway
 
 #### Docker Run Container
-- docker run -it --name=ocelotgateway -e ASPNETCORE_URLS="https://+;" -e ASPNETCORE_HTTPS_PORT=7001 -e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certificate.pfx -v ${HOME}\\.aspnet\\https:/https/ -p 5000:443 ocelot-gateway
+- docker run -it --name=ocelotgateway -e ASPNETCORE_URLS="https://+;" -e ASPNETCORE_HTTPS_PORT=7001 -e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certificate.pfx -p 5000:443 ocelot-gateway
 
 ```text
 docker run -it --name=ocelotgateway 
@@ -57,6 +57,5 @@ docker run -it --name=ocelotgateway
   -e ASPNETCORE_HTTPS_PORT=7001 
   -e ASPNETCORE_Kestrel__Certificates__Default__Password="Pass@*****" 
   -e ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certificate.pfx 
-  -v ${HOME}\\.aspnet\\https:/https/ 
   -p 5000:443 ocelot-gateway
 ```
