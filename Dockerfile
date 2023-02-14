@@ -1,72 +1,40 @@
-# First Stage SDK Framework.
+# ---------------------------------------------------
+#	DOCKERFILE HTTPS ASP.NET Core
+# ---------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+# ---------------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-WORKDIR /app
+WORKDIR /src
+COPY ["OcelotGateway/OcelotGateway.csproj", "OcelotGateway/"]
+RUN dotnet restore "OcelotGateway/OcelotGateway.csproj"
 
-EXPOSE 443
-EXPOSE 80
-
-# Generate SSL Certificate trust signed.
-#RUN dotnet dev-certs https -ep %USERPROFILE%\.aspnet\https\api-gateway.pfx -p Pass@*****
-#RUN dotnet dev-certs https --trust
-
-# copy project csproj file and restore it in docker directory
 COPY . .
-RUN dotnet restore
+WORKDIR "/src/OcelotGateway"
+RUN dotnet build "OcelotGateway.csproj" -c Release -o /app/build
 
-# Copy everything into the docker directory and build
-COPY . .
-RUN dotnet publish -c Release -o out
+COPY csr.conf /app/build
+COPY cert.conf /app/build
 
-# Build runtime final image
-#FROM mcr.microsoft.com/dotnet/aspnet:6.0
-#WORKDIR /app
-#COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
-#COPY --from=build /app/out .
-#ENTRYPOINT ["dotnet", "api-gateway.dll"]
+# ---------------------------------------------------
+FROM build AS publish
+RUN dotnet publish "OcelotGateway.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# -------------------------------------------------------------------------------------------
+RUN openssl genrsa -out /app/publish/server.key 2048
+RUN openssl req -new -key /app/publish/server.key -out /app/publish/server.csr -config /app/build/csr.conf
+RUN openssl req -x509 -sha256 -days 356 -nodes -newkey rsa:2048 -subj "/CN=DigiCert SHA2 Extended Validation Server CA/C=CO/L=Bogota/O=DigiCert Inc/OU=www.digicert.com" -keyout /app/publish/rootCA.key -out /app/publish/rootCA.crt
+RUN openssl x509 -req -in /app/publish/server.csr -CA /app/publish/rootCA.crt -CAkey /app/publish/rootCA.key -CAcreateserial -out /app/publish/server.crt -days 365 -sha256 -extfile /app/build/cert.conf
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+RUN cat /app/publish/server.key > /app/publish/server.pem
+RUN cat /app/publish/server.crt >> /app/publish/server.pem
 
-# update system
-RUN apt-get update -y && apt-get upgrade -y
+RUN openssl pkcs12 -export -out /app/publish/certificate.pfx -inkey /app/publish/server.key -in /app/publish/server.pem -passout pass:Pass@*****
 
-# dotnet specific env vars, default to development environment
-ENV ASPNETCORE_ENVIRONMENT=Development
-ENV ASPNETCORE_URLS=http://+:80;https://+:443
-
-# dotnet kestrel env vars
-ENV Kestrel:Certificates:Default:Path=/etc/ssl/private/cert.pfx
-ENV Kestrel:Certificates:Default:Password=changeit
-ENV Kestrel:Certificates:Default:AllowInvalid=true
-ENV Kestrel:EndPointDefaults:Protocols=Http1AndHttp2
-
-# copy certificate authority certs from local file system
-ARG CA_KEY=C://Users//OPT//.aspnet//https//rootCAKey.pem
-ARG CA_CERT=C://Users//OPT//.aspnet//https//rootCACert.pem
-ARG DOMAINS='localhost 127.0.0.1 ::1'
-
-# default ca cert location (mkcert)
-COPY ${CA_KEY} /root/.local/share/mkcert/rootCAKey.pem
-COPY ${CA_CERT} /root/.local/share/mkcert/rootCACert.pem
-
-# install CA and SSL cert
-RUN apt-get install curl -y && \
-	curl -L https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v1.4.3-linux-amd64 > /usr/local/bin/mkcert && \
-	chmod +x /usr/local/bin/mkcert
-RUN mkcert -install
-RUN mkcert -p12-file /etc/ssl/private/cert.pfx -pkcs12 $DOMAINS
-
-# Install locale
-RUN apt-get install locales -y \
-	&& localedef -f UTF-8 -i en_GB en_GB.UTF-8 \
-	&& update-locale LANG=en_GB.utf8
-
-ENV LANG=en_GB:en \
-	LANGUAGE=en_GB:en \
-	LC_ALL=en_GB.UTF-8
-
+# ---------------------------------------------------
+FROM base AS final
 WORKDIR /app
-
-EXPOSE 80
-EXPOSE 443
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "OcelotGateway.dll"]
